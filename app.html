@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Theta — paper rich-picture cards</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --pur:#6C2BD9; --red:#E11D2A; --blu:#1E14C7; --grn:#16A86B; --ink:#1c1a17;
+    --bg:#EFF1F4; --panel:#FFFDF8;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Verdana,'Trebuchet MS',Arial,sans-serif;background:var(--bg);color:var(--ink);
+       margin:0;padding:0;line-height:1.5}
+  header{background:var(--ink);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;letter-spacing:1px}
+  header .tag{font-size:12.5px;color:#cfc8ba}
+  .tabs{display:flex;gap:6px;margin-left:auto}
+  .tabs button{background:#33302b;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tabs button.active{background:var(--pur)}
+  main{max-width:1360px;margin:0 auto;padding:18px}
+  .wrap{display:grid;grid-template-columns:430px 1fr;gap:18px}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid #d8d8de;border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 10px}
+  label{display:block;font-size:12.5px;font-weight:700;margin:10px 0 3px}
+  input[type=text],textarea,select{width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid #c9cdd6;
+       border-radius:7px;background:#fff;color:var(--ink)}
+  textarea{resize:vertical}
+  .hint{font-size:11.5px;color:#6f6a61;margin:2px 0 0}
+  .btn{background:var(--pur);color:#fff;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13.5px;font-weight:700}
+  .btn.alt{background:var(--grn)} .btn.ghost{background:#5b5750}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .engine{display:flex;gap:8px;margin:6px 0}
+  .engine label{display:flex;gap:6px;align-items:center;font-weight:700;background:#f1eefb;border:1px solid #d9cdf3;
+       padding:8px 10px;border-radius:8px;cursor:pointer;flex:1;margin:0}
+  .engine input{accent-color:var(--pur)}
+  .preview{background:var(--bg);border:1px solid #d8d8de;border-radius:12px;padding:10px;overflow:auto}
+  .preview svg{width:100%;height:auto;background:#fff;border-radius:8px}
+  #status{font-size:12.5px;color:var(--pur);min-height:18px;margin-top:6px}
+  .files{font-size:12.5px;margin:8px 0}
+  details summary{cursor:pointer;font-weight:700;font-size:12.5px;margin-top:6px}
+  .small{font-size:12px;color:#6f6a61}
+  .pill{display:inline-block;background:#EDE3FB;color:#4a1f9c;border:1px solid var(--pur);border-radius:10px;
+       padding:1px 7px;font-size:11px;font-weight:700;margin-right:4px}
+  table{border-collapse:collapse;width:100%;font-size:12px}
+  td,th{border:1px solid #ddd;padding:5px;text-align:left}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Θ THETA</h1>
+  <span class="tag">turn a paper into a one-page rich-picture card</span>
+  <div class="tabs">
+    <button id="tabSingle" class="active" onclick="showTab('single')">Single paper</button>
+    <button id="tabBatch" onclick="showTab('batch')">Batch</button>
+    <button id="tabSettings" onclick="showTab('settings')">Settings</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SINGLE ============ -->
+  <div id="single">
+   <div class="wrap">
+    <div>
+      <div class="card">
+        <h2>1 · Load a paper</h2>
+        <input type="file" id="pdf" accept="application/pdf"/>
+        <p class="hint">The PDF is read in your browser — nothing is uploaded anywhere.</p>
+        <label>Engine</label>
+        <div class="engine">
+          <label><input type="radio" name="eng" value="openalex" checked/> 🆓 OpenAlex (no key)</label>
+          <label><input type="radio" name="eng" value="claude"/> 🤖 Claude (your key)</label>
+        </div>
+        <label>DOI or title <span class="small">(optional — auto-detected from the PDF)</span></label>
+        <input type="text" id="doi" placeholder="10.xxxx/...  or  paper title"/>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="run" onclick="runSingle()">Auto-fill card ▶</button>
+          <button class="btn ghost" onclick="clearForm()">Clear</button>
+        </div>
+        <div id="status"></div>
+      </div>
+
+      <div class="card">
+        <h2>2 · Review &amp; edit</h2>
+        <label>Title</label><input type="text" id="f_title"/>
+        <div class="row"><div style="flex:2"><label>Authors</label><input type="text" id="f_authors"/></div>
+          <div style="flex:1"><label>Year</label><input type="text" id="f_year"/></div></div>
+        <label>Venue</label><input type="text" id="f_venue"/>
+        <label>Study type</label><input type="text" id="f_study_type"/>
+        <div class="row"><div style="flex:1"><label>Country</label><input type="text" id="f_country"/></div>
+          <div style="flex:1"><label>Region</label><input type="text" id="f_region"/></div></div>
+        <label>Sample / Impact</label><input type="text" id="f_impact"/>
+        <hr/>
+        <label>Central approach</label><input type="text" id="f_central"/>
+        <label>WHO / actors <span class="small">(one per line)</span></label><textarea id="f_actors" rows="3"></textarea>
+        <label>Factors / themes <span class="small">(one per line, max 6)</span></label><textarea id="f_factors" rows="5"></textarea>
+        <label>Outcome</label><input type="text" id="f_outcome"/>
+        <label>Headline finding</label><input type="text" id="f_finding"/>
+        <label>Means — how <span class="small">(one per line)</span></label><textarea id="f_means" rows="4"></textarea>
+        <label>Ends — why / for what <span class="small">(one per line)</span></label><textarea id="f_ends" rows="4"></textarea>
+        <label>Verbatims <span class="small">(one per line as  page | line | quote )</span></label>
+        <textarea id="f_verbatims" rows="6" placeholder="1 | 20-23 | The study aims to..."></textarea>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>3 · Card preview</h2>
+        <div class="row" style="margin-bottom:10px">
+          <button class="btn alt" onclick="downloadSVG()">Download SVG</button>
+          <button class="btn alt" onclick="downloadPNG()">Download PNG</button>
+          <button class="btn" onclick="downloadJSON()">Download fields JSON</button>
+        </div>
+        <div class="preview" id="preview"></div>
+      </div>
+    </div>
+   </div>
+  </div>
+
+  <!-- ============ BATCH ============ -->
+  <div id="batch" class="hide">
+    <div class="card">
+      <h2>Batch — many papers at once</h2>
+      <input type="file" id="pdfs" accept="application/pdf" multiple/>
+      <p class="hint">Pick several PDFs. Each becomes a card. Uses the engine selected on the Single tab.</p>
+      <div class="row"><button class="btn" id="runBatch" onclick="runBatch()">Process all ▶</button>
+        <button class="btn alt" id="zipBtn" onclick="downloadZip()" disabled>Download all (zip)</button>
+        <button class="btn" id="csvBtn" onclick="downloadCSV()" disabled>Download CSV summary</button></div>
+      <div id="batchStatus" style="font-size:12.5px;color:var(--pur);margin-top:8px"></div>
+      <div id="batchTable" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div id="settings" class="hide">
+    <div class="card" style="max-width:640px">
+      <h2>Settings</h2>
+      <label>Claude API key <span class="small">(stored only in this browser)</span></label>
+      <input type="text" id="apikey" placeholder="sk-ant-..."/>
+      <label>Claude model</label>
+      <input type="text" id="model" value="claude-3-5-sonnet-latest"/>
+      <label>Your email <span class="small">(OpenAlex "polite pool" — optional)</span></label>
+      <input type="text" id="mailto" placeholder="you@example.com"/>
+      <div class="row" style="margin-top:10px"><button class="btn" onclick="saveSettings()">Save</button></div>
+      <p class="hint" id="setStatus"></p>
+      <details><summary>About the engines</summary>
+        <p class="small">OpenAlex gives free metadata (title, authors, year, venue, country, concepts) and an abstract used to
+        draft Means/Ends. Claude reads the full text for a sharper draft. Verbatims with page+line always come from the
+        PDF itself, in your browser.</p>
+      </details>
+    </div>
+  </div>
+</main>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ---------- state ---------- */
+let F = blankFields();
+let lastPages = null;      // [{lineNo,text}] per page
+function blankFields(){return{
+  title:"",authors:"",year:"",venue:"",study_type:"Research article",
+  country:"",region:"",sample:"",impact:"",
+  central:"Core approach",actors:["Study participants"],factors:["(theme 1)","(theme 2)","(theme 3)"],
+  outcome:"Reported outcome",finding:"",means:["(method)"],ends:["(aim)"],verbatims:[]
+};}
+
+/* ---------- settings ---------- */
+function loadSettings(){
+  apikey.value=localStorage.getItem('theta_key')||'';
+  model.value=localStorage.getItem('theta_model')||'claude-3-5-sonnet-latest';
+  mailto.value=localStorage.getItem('theta_mail')||'';
+}
+function saveSettings(){
+  localStorage.setItem('theta_key',apikey.value.trim());
+  localStorage.setItem('theta_model',model.value.trim());
+  localStorage.setItem('theta_mail',mailto.value.trim());
+  setStatus.textContent='Saved ✓';
+}
+function showTab(t){
+  for(const id of ['single','batch','settings']) document.getElementById(id).classList.toggle('hide',id!==t);
+  tabSingle.classList.toggle('active',t==='single');
+  tabBatch.classList.toggle('active',t==='batch');
+  tabSettings.classList.toggle('active',t==='settings');
+}
+
+/* ---------- PDF -> pages with line numbers ---------- */
+async function pdfToPages(file){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const tc=await page.getTextContent();
+    const rows={};
+    for(const it of tc.items){
+      const y=Math.round(it.transform[5]);
+      (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
+    }
+    const ys=Object.keys(rows).map(Number).sort((a,b)=>b-a); // top first
+    const lines=[];let n=0;
+    for(const y of ys){
+      const txt=rows[y].sort((a,b)=>a.x-b.x).map(o=>o.s).join('').replace(/\s+/g,' ').trim();
+      n++; if(txt) lines.push({lineNo:n,text:txt});
+    }
+    pages.push(lines);
+  }
+  return pages;
+}
+function flat(pages){return pages.map(pg=>pg.map(l=>l.text).join('\n')).join('\n');}
+const ENDS_TRIG=["aims to","aim of","purpose of","this study","this paper","objective","findings show","results show","results reveal","the results","we found","underscore"];
+const MEANS_TRIG=["research design","design is employed","method","sampling","questionnaire","focus group","data were","data collected","interview","protocol","respondents","instrument","participants"];
+function candidateQuotes(pages,trig,limit){
+  const hits=[];
+  for(let pi=0;pi<pages.length;pi++) for(const l of pages[pi]){
+    const t=l.text.trim(); if(t.length<40||t.length>220) continue;
+    const low=t.toLowerCase();
+    if(trig.some(k=>low.includes(k))){hits.push({page:pi+1,line:String(l.lineNo),text:t}); if(hits.length>=limit)return hits;}
+  }
+  return hits;
+}
+
+/* ---------- helpers ---------- */
+const COUNTRY_RE=/\b(Philippines|Romania|Ecuador|China|United Kingdom|United States|USA|Taiwan|Turkey|Australia|Spain|Indonesia|Japan|Malaysia|Italy|Russia|Canada|Egypt|Greece|Israel|Mexico|Poland|Qatar|Thailand|Saudi Arabia|Brazil|France|Ghana|India|South Korea|Korea|Germany|Netherlands|Portugal|Ireland|Finland)\b/;
+const REGION={PH:"Southeast Asia",RO:"Eastern Europe (EU)",EC:"Latin America",CN:"East Asia",TW:"East Asia",JP:"East Asia",KR:"East Asia",GB:"Western Europe",ES:"Western Europe",IT:"Southern Europe",US:"North America",CA:"North America",AU:"Oceania",TR:"West Asia",IN:"South Asia",DE:"Western Europe",FR:"Western Europe"};
+const TYPE_RULES=[["prisma","Systematic review (PRISMA)"],["systematic review","Systematic review"],["meta-analysis","Meta-analysis"],["focus group","Qualitative study (focus group)"],["semi-structured interview","Qualitative study (interviews)"],["mixed method","Mixed-methods study"],["quantitative","Quantitative study"],["qualitative","Qualitative study"],["survey","Survey study"]];
+function guessType(text){const l=text.toLowerCase();for(const[k,v]of TYPE_RULES)if(l.includes(k))return v;return"Research article";}
+function findSample(text){const m=text.toLowerCase().match(/\b(\d{1,4})\s+(respondents|participants|informants|representatives|experts|interviewees|companies|firms|primary studies|studies|students|teachers)/);return m?m[1]+" "+m[2]:"";}
+function sentences(t){return (t||"").replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).filter(s=>s.length>30);}
+function pick(sents,kws,n){const out=[];for(const s of sents){const l=s.toLowerCase();if(kws.some(k=>l.includes(k))){out.push(s.length>78?s.slice(0,75)+"…":s);if(out.length>=n)break;}}return out;}
+
+/* ---------- OpenAlex engine ---------- */
+function reconstructAbstract(inv){if(!inv)return"";const words=[];for(const w in inv)for(const pos of inv[w])words[pos]=w;return words.join(' ');}
+async function openAlexFill(pages){
+  const text=flat(pages);
+  let doiInput=doi.value.trim();
+  let url=null;
+  const doiMatch=doiInput.match(/10\.\d{4,9}\/\S+/i)||text.match(/10\.\d{4,9}\/[^\s"'<>]+/i);
+  const mail=localStorage.getItem('theta_mail');const mp=mail?("&mailto="+encodeURIComponent(mail)):"";
+  if(doiMatch){url="https://api.openalex.org/works/https://doi.org/"+doiMatch[0].replace(/[).,;]+$/,'')+(mail?("?mailto="+encodeURIComponent(mail)):"");}
+  else{const q=doiInput||(pages[0]&&pages[0].slice(0,3).map(l=>l.text).join(' '))||"";
+       url="https://api.openalex.org/works?search="+encodeURIComponent(q)+"&per_page=1"+mp;}
+  const r=await fetch(url); if(!r.ok) throw new Error("OpenAlex "+r.status);
+  let w=await r.json(); if(w.results) w=w.results[0];
+  if(!w) throw new Error("No OpenAlex match — try entering the DOI or title.");
+  const auth=(w.authorships||[]).map(a=>a.author&&a.author.display_name).filter(Boolean);
+  const cc=((w.authorships||[]).flatMap(a=>a.institutions||[]).map(i=>i.country_code).filter(Boolean))[0]||"";
+  const abs=reconstructAbstract(w.abstract_inverted_index);
+  const sents=sentences(abs);
+  const concepts=(w.concepts||[]).slice(0,6).map(c=>c.display_name);
+  const G=blankFields();
+  G.title=w.display_name||""; G.authors=auth.length>2?(auth[0]+" et al."):auth.join(", ");
+  G.year=String(w.publication_year||"");
+  G.venue=(w.primary_location&&w.primary_location.source&&w.primary_location.source.display_name)||"";
+  G.study_type=guessType(abs+" "+text);
+  G.country=cc; G.region=REGION[cc]||"";
+  G.sample=findSample(text); G.impact=G.sample;
+  G.central=(w.title||"").split(/[:\-]/)[0].split(' ').slice(0,3).join(' ')||"Core approach";
+  G.factors=concepts.length?concepts:["(theme 1)","(theme 2)"];
+  G.outcome=(concepts[0]||"Reported outcome");
+  G.finding="";
+  G.means=pick(sents,["method","design","sampl","data","interview","questionnaire","survey","focus group","participants"],4);
+  G.ends=pick(sents,["aim","purpose","this study","this paper","objective","find","result","reveal"],4);
+  if(!G.means.length)G.means=["(method not detected — edit me)"];
+  if(!G.ends.length)G.ends=["(aim not detected — edit me)"];
+  G.actors=["Study participants"];
+  G.verbatims=candidateQuotes(pages,ENDS_TRIG.concat(MEANS_TRIG),5);
+  return G;
+}
+
+/* ---------- Claude engine ---------- */
+const SCHEMA_PROMPT=`You are Theta. Read the paper text and return ONLY valid JSON (no prose) with keys:
+title, authors, year, venue, study_type, country, region, sample, impact, central,
+actors (array, max 3), factors (array, max 6), outcome, finding,
+means (array, max 5), ends (array, max 5),
+verbatims (array of {page:int, line:string, text:string}, max 5, quotes copied verbatim).
+Rules: means=method/design/sample/instruments; ends=aims/outcomes/finding; keep each string <= ~75 chars.
+The text is given with "=== PAGE n ===" markers and "n| " line prefixes — use them for verbatim page+line.`;
+async function claudeFill(pages){
+  const key=localStorage.getItem('theta_key'); if(!key) throw new Error("Add your Claude API key in Settings.");
+  const mdl=localStorage.getItem('theta_model')||'claude-3-5-sonnet-latest';
+  let text=""; for(let i=0;i<pages.length;i++){text+="\n=== PAGE "+(i+1)+" ===\n"+pages[i].map(l=>l.lineNo+"| "+l.text).join("\n");}
+  text=text.slice(0,60000);
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:mdl,max_tokens:2000,system:SCHEMA_PROMPT,messages:[{role:"user",content:"PAPER TEXT:\n"+text}]})});
+  if(!r.ok){const e=await r.text();throw new Error("Claude "+r.status+": "+e.slice(0,160));}
+  const j=await r.json(); const raw=j.content[0].text; const m=raw.match(/\{[\s\S]*\}/);
+  const G=Object.assign(blankFields(),JSON.parse(m?m[0]:raw));
+  if(!G.verbatims||!G.verbatims.length)G.verbatims=candidateQuotes(pages,ENDS_TRIG.concat(MEANS_TRIG),5);
+  return G;
+}
+
+/* ---------- form <-> F ---------- */
+function lines2arr(s){return s.split('\n').map(x=>x.trim()).filter(Boolean);}
+function arr2lines(a){return (a||[]).join('\n');}
+function vb2lines(a){return (a||[]).map(v=>v.page+" | "+v.line+" | "+v.text).join('\n');}
+function lines2vb(s){return s.split('\n').map(x=>x.trim()).filter(Boolean).map(line=>{
+  const m=line.split('|'); if(m.length>=3)return{page:parseInt(m[0])||1,line:m[1].trim().replace(/^L/i,''),text:m.slice(2).join('|').trim()};
+  return{page:1,line:"",text:line};});}
+function F2form(){
+  for(const k of ['title','authors','year','venue','study_type','country','region','impact','central','outcome','finding'])
+    document.getElementById('f_'+k).value=F[k]||"";
+  f_actors.value=arr2lines(F.actors); f_factors.value=arr2lines(F.factors);
+  f_means.value=arr2lines(F.means); f_ends.value=arr2lines(F.ends); f_verbatims.value=vb2lines(F.verbatims);
+}
+function form2F(){
+  for(const k of ['title','authors','year','venue','study_type','country','region','impact','central','outcome','finding'])
+    F[k]=document.getElementById('f_'+k).value;
+  F.actors=lines2arr(f_actors.value); F.factors=lines2arr(f_factors.value);
+  F.means=lines2arr(f_means.value); F.ends=lines2arr(f_ends.value); F.verbatims=lines2vb(f_verbatims.value);
+  render();
+}
+['f_title','f_authors','f_year','f_venue','f_study_type','f_country','f_region','f_impact','f_central','f_outcome','f_finding','f_actors','f_factors','f_means','f_ends','f_verbatims']
+  .forEach(id=>document.addEventListener('input',e=>{if(e.target.id===id)form2F();}));
+
+function clearForm(){F=blankFields();F2form();render();status.textContent="";}
+
+/* ---------- run ---------- */
+async function getPages(){
+  if(lastPages) return lastPages;
+  if(!pdf.files[0]) throw new Error("Choose a PDF first.");
+  status.textContent="Reading PDF…"; lastPages=await pdfToPages(pdf.files[0]); return lastPages;
+}
+pdf.addEventListener('change',()=>{lastPages=null;});
+async function runSingle(){
+  try{
+    run.disabled=true;
+    const eng=document.querySelector('input[name=eng]:checked').value;
+    const pages=await getPages();
+    status.textContent=(eng==='claude'?"Asking Claude…":"Querying OpenAlex…");
+    F = eng==='claude' ? await claudeFill(pages) : await openAlexFill(pages);
+    F2form(); render(); status.textContent="Done ✓  Review & edit, then download.";
+  }catch(e){status.textContent="⚠ "+e.message;}
+  finally{run.disabled=false;}
+}
+
+/* ============ RENDERER (SVG) ============ */
+const PUR="#6C2BD9",RED="#E11D2A",BLU="#1E14C7",GRN="#16A86B",INK="#1c1a17";
+function esc(s){return String(s==null?"":s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function wrap(s,w){const words=String(s||"").split(/\s+/),L=[];let c="";for(const x of words){if((c+" "+x).trim().length<=w)c=(c+" "+x).trim();else{L.push(c);c=x;}}if(c)L.push(c);return L;}
+function stick(cx,t){return `<circle cx="${cx}" cy="${t}" r="9" fill="#fff"/><line x1="${cx}" y1="${t+9}" x2="${cx}" y2="${t+34}"/><line x1="${cx}" y1="${t+16}" x2="${cx-13}" y2="${t+27}"/><line x1="${cx}" y1="${t+16}" x2="${cx+13}" y2="${t+27}"/><line x1="${cx}" y1="${t+34}" x2="${cx-11}" y2="${t+54}"/><line x1="${cx}" y1="${t+34}" x2="${cx+11}" y2="${t+54}"/>`;}
+function buildSVG(F){
+  const s=[];
+  s.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1160" font-family="Verdana,'Trebuchet MS',Arial,sans-serif">`);
+  s.push(`<defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5b5750"/></marker><marker id="arb" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="${GRN}"/></marker><style>.m{font-size:13px;fill:#2a2722}</style></defs>`);
+  s.push(`<rect width="1320" height="1160" fill="#EFF1F4"/>`);
+  s.push(`<rect x="40" y="40" width="1240" height="772" rx="6" fill="#FFFDF8" stroke="${PUR}" stroke-width="4"/>`);
+  s.push(`<text x="68" y="74" font-size="12" font-weight="700" fill="${PUR}" letter-spacing="2">RICH PICTURE</text>`);
+  let ty=102; for(const ln of wrap(F.title||"(title)",64).slice(0,2)){s.push(`<text x="68" y="${ty}" font-size="21" font-weight="800" fill="${INK}">${esc(ln)}</text>`);ty+=27;}
+  const meta=[F.authors,F.year,F.venue].filter(Boolean).join(" · ");
+  s.push(`<text x="68" y="${ty+2}" font-size="13.5" fill="#6f6a61">${esc(meta)}</text>`);
+  const chip=F.study_type||""; const cw=16+chip.length*8.2;
+  s.push(`<rect x="${1256-cw}" y="60" width="${cw}" height="30" rx="15" fill="#EDE3FB" stroke="${PUR}" stroke-width="1.6"/><text x="${1256-cw/2}" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#4a1f9c">${esc(chip)}</text>`);
+  const divY=ty+18; s.push(`<line x1="64" y1="${divY}" x2="1256" y2="${divY}" stroke="#e3ddcf" stroke-width="1.5"/>`);
+  const bandTop=divY+18, midy=bandTop+175;
+  s.push(`<text x="78" y="${bandTop+14}" font-size="13" font-weight="700" fill="#3a3631">WHO</text>`);
+  const figs=Math.min(3,Math.max(1,(F.actors||[]).length));
+  s.push(`<g stroke="#3a3631" stroke-width="2.2" fill="none" stroke-linecap="round">`);
+  for(let k=0;k<figs;k++)s.push(stick(96+k*36,bandTop+44)); s.push(`</g>`);
+  let ay=bandTop+118; if(F.sample){s.push(`<text x="78" y="${ay}" font-size="13" font-weight="700" fill="${PUR}">${esc(F.sample)}</text>`);ay+=20;}
+  for(const a of (F.actors||[]).slice(0,3)) for(const wl of wrap(a,22)){s.push(`<text x="78" y="${ay}" class="m">${esc(wl)}</text>`);ay+=18;}
+  s.push(`<line x1="190" y1="${midy-20}" x2="276" y2="${midy}" stroke="#5b5750" stroke-width="2.2" marker-end="url(#ar)"/>`);
+  s.push(`<circle cx="372" cy="${midy}" r="76" fill="#EDE3FB" stroke="${PUR}" stroke-width="3"/>`);
+  const cl=wrap(F.central||"Core",14).slice(0,3); let cy=midy-(cl.length-1)*9-2;
+  for(const ln of cl){s.push(`<text x="372" y="${cy}" text-anchor="middle" font-size="14" font-weight="800" fill="#4a1f9c">${esc(ln)}</text>`);cy+=18;}
+  s.push(`<text x="372" y="${midy+58}" text-anchor="middle" font-size="11.5" fill="#6b4fb0">the approach</text>`);
+  const factors=(F.factors||[]).slice(0,6), n=Math.max(1,factors.length), fx=560,fw=250,fh=44,gap=14;
+  const tot=n*fh+(n-1)*gap, fy0=midy-tot/2;
+  factors.forEach((fct,i)=>{const yy=fy0+i*(fh+gap);
+    s.push(`<line x1="450" y1="${midy}" x2="${fx}" y2="${yy+fh/2}" stroke="#9a907c" stroke-width="2" marker-end="url(#ar)"/>`);
+    s.push(`<rect x="${fx}" y="${yy}" width="${fw}" height="${fh}" rx="8" fill="#fff" stroke="${PUR}" stroke-width="1.8"/>`);
+    const wl=wrap((i+1)+" · "+fct,30).slice(0,2); let t2=yy+(wl.length===1?24:17);
+    wl.forEach((ln,j)=>{s.push(`<text x="${fx+14}" y="${t2}" class="m" font-weight="${j===0?700:400}">${esc(ln)}</text>`);t2+=16;});});
+  s.push(`<line x1="${fx+fw}" y1="${midy}" x2="${fx+fw+110}" y2="${midy}" stroke="${GRN}" stroke-width="3.5" marker-end="url(#arb)"/>`);
+  const ox=fx+fw+185;
+  s.push(`<g transform="translate(${ox},${midy})"><rect x="-70" y="-44" width="140" height="78" fill="#fff" stroke="${GRN}" stroke-width="2.4"/><polygon points="-82,-44 0,-86 82,-44" fill="#d6f0e4" stroke="${GRN}" stroke-width="2.4"/><line x1="-44" y1="-20" x2="44" y2="-20" stroke="${GRN}" stroke-width="1.6"/><line x1="-44" y1="2" x2="44" y2="2" stroke="${GRN}" stroke-width="1.6"/></g>`);
+  let oyt=midy+58; for(const ln of wrap(F.outcome||"Outcome",20).slice(0,2)){s.push(`<text x="${ox}" y="${oyt}" text-anchor="middle" font-size="13" font-weight="700" fill="#0e6b45">${esc(ln)}</text>`);oyt+=18;}
+  if(F.finding)s.push(`<g transform="translate(${ox-150},${midy-118})"><rect x="0" y="0" width="300" height="32" rx="16" fill="#FFF1C9" stroke="#C9A227" stroke-width="1.6"/><text x="150" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#7a5d10">✓ ${esc(F.finding)}</text></g>`);
+  const me=612;
+  s.push(`<rect x="44" y="${me}" width="600" height="156" fill="${RED}"/><text x="64" y="${me+30}" font-size="18" font-weight="800" fill="#fff">Means  (how)</text>`);
+  let yy=me+56; for(const b of (F.means||[]).slice(0,5)) for(const wl of wrap("• "+b,60).slice(0,2)){s.push(`<text x="64" y="${yy}" font-size="13" fill="#fff">${esc(wl)}</text>`);yy+=19;}
+  s.push(`<rect x="646" y="${me}" width="630" height="156" fill="${BLU}"/><text x="666" y="${me+30}" font-size="18" font-weight="800" fill="#fff">Ends  (why / for what)</text>`);
+  yy=me+56; for(const b of (F.ends||[]).slice(0,5)) for(const wl of wrap("• "+b,62).slice(0,2)){s.push(`<text x="666" y="${yy}" font-size="13" fill="#fff">${esc(wl)}</text>`);yy+=19;}
+  s.push(`<rect x="40" y="828" width="1240" height="92" rx="6" fill="${GRN}"/><text x="64" y="858" font-size="16" font-weight="800" fill="#fff">Paper Info</text>`);
+  s.push(`<text x="64" y="884" font-size="13.5" fill="#fff"><tspan font-weight="700">Country:</tspan> ${esc(F.country||"—")}    <tspan font-weight="700">Region:</tspan> ${esc(F.region||"—")}    <tspan font-weight="700">Type:</tspan> ${esc(F.study_type||"—")}</text>`);
+  s.push(`<text x="64" y="908" font-size="13.5" fill="#fff"><tspan font-weight="700">Sample / Impact:</tspan> ${esc(F.impact||F.sample||"—")}</text>`);
+  const vy=940;
+  s.push(`<rect x="40" y="${vy}" width="1240" height="200" rx="6" fill="#FFFDF8" stroke="${PUR}" stroke-width="3"/><text x="64" y="${vy+28}" font-size="16" font-weight="800" fill="${INK}">Key verbatims <tspan font-weight="400" fill="#8a857c">(page · line — for citation)</tspan></text>`);
+  let ry=vy+50; for(const q of (F.verbatims||[]).slice(0,5)){const cite=`p${q.page} · L${q.line}`;
+    s.push(`<rect x="64" y="${ry-15}" width="92" height="22" rx="6" fill="#EDE3FB" stroke="${PUR}"/><text x="110" y="${ry+1}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#4a1f9c">${esc(cite)}</text>`);
+    let line=q.text||""; if(line.length>120)line=line.slice(0,120)+"…";
+    s.push(`<text x="168" y="${ry+1}" font-size="13" fill="#2a2722">“${esc(line)}”</text>`); ry+=30;}
+  s.push(`</svg>`);
+  return s.join("\n");
+}
+function render(){preview.innerHTML=buildSVG(F);}
+
+/* ---------- downloads ---------- */
+function dl(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+function slug(){return (F.title||"theta-card").toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40).replace(/^-|-$/g,'');}
+function downloadSVG(){dl(slug()+".svg",new Blob([buildSVG(F)],{type:"image/svg+xml"}));}
+function downloadJSON(){dl(slug()+".json",new Blob([JSON.stringify(F,null,2)],{type:"application/json"}));}
+function svgToPng(svgStr,scale){return new Promise((res)=>{const img=new Image();const b=new Blob([svgStr],{type:"image/svg+xml"});const u=URL.createObjectURL(b);
+  img.onload=()=>{const c=document.createElement('canvas');c.width=1320*scale;c.height=1160*scale;const x=c.getContext('2d');x.fillStyle="#EFF1F4";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(res,'image/png');};
+  img.src=u;});}
+async function downloadPNG(){dl(slug()+".png",await svgToPng(buildSVG(F),2));}
+
+/* ---------- batch ---------- */
+let batchResults=[];
+async function runBatch(){
+  const fs=[...pdfs.files]; if(!fs.length){batchStatus.textContent="Pick some PDFs first.";return;}
+  const eng=document.querySelector('input[name=eng]:checked').value;
+  runBatch.disabled=true; batchResults=[];
+  for(let i=0;i<fs.length;i++){
+    batchStatus.textContent="Processing "+(i+1)+"/"+fs.length+": "+fs[i].name+"…";
+    try{const pages=await pdfToPages(fs[i]); const saved=lastPages; lastPages=pages;
+      const G=eng==='claude'?await claudeFill(pages):await openAlexFill(pages); lastPages=saved;
+      batchResults.push({name:fs[i].name,F:G,ok:true});
+    }catch(e){batchResults.push({name:fs[i].name,F:null,ok:false,err:e.message});}
+  }
+  batchStatus.textContent="Done — "+batchResults.filter(r=>r.ok).length+"/"+fs.length+" cards.";
+  zipBtn.disabled=false; csvBtn.disabled=false; runBatch.disabled=false; renderBatchTable();
+}
+function renderBatchTable(){
+  let h="<table><tr><th>#</th><th>File</th><th>Title</th><th>Type</th><th>Country</th><th>Status</th></tr>";
+  batchResults.forEach((r,i)=>{h+="<tr><td>"+(i+1)+"</td><td>"+esc(r.name)+"</td><td>"+esc(r.F?r.F.title:'')+"</td><td>"+esc(r.F?r.F.study_type:'')+"</td><td>"+esc(r.F?r.F.country:'')+"</td><td>"+(r.ok?'✓':'⚠ '+esc(r.err||''))+"</td></tr>";});
+  h+="</table>"; batchTable.innerHTML=h;
+}
+async function downloadZip(){
+  const zip=new JSZip();
+  for(let i=0;i<batchResults.length;i++){const r=batchResults[i];if(!r.ok)continue;
+    const base=(r.F.title||r.name).toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40).replace(/^-|-$/g,'')||("card"+i);
+    const svg=buildSVG(r.F); zip.file(base+".svg",svg); zip.file(base+".json",JSON.stringify(r.F,null,2));
+    const png=await svgToPng(svg,2); zip.file(base+".png",png);}
+  dl("theta-cards.zip",await zip.generateAsync({type:"blob"}));
+}
+function downloadCSV(){
+  const cols=["file","title","authors","year","venue","study_type","country","region","sample"];
+  let csv=cols.join(",")+"\n";
+  for(const r of batchResults){if(!r.ok)continue;const F=r.F;
+    csv+=[r.name,F.title,F.authors,F.year,F.venue,F.study_type,F.country,F.region,F.sample]
+      .map(v=>'"'+String(v||"").replace(/"/g,'""')+'"').join(",")+"\n";}
+  dl("theta-summary.csv",new Blob([csv],{type:"text/csv"}));
+}
+
+/* ---------- init ---------- */
+loadSettings(); F2form(); render();
+</script>
+</body>
+</html>
