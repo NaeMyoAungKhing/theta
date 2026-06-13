@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.theta.svg
+*.theta.json
+*.png
+!examples/*.png
+!examples/*.svg
+!examples/*.json
+*.pdf
+.DS_Store
+.venv/
