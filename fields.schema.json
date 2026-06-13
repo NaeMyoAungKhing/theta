@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Theta card fields",
+  "type": "object",
+  "properties": {
+    "title":      {"type": "string", "description": "Full paper title"},
+    "authors":    {"type": "string", "description": "Authors, shortened ok (e.g. 'Smith et al.')"},
+    "year":       {"type": "string"},
+    "venue":      {"type": "string", "description": "Journal / conference + volume"},
+    "study_type": {"type": "string", "description": "e.g. Quantitative study, Qualitative (focus group), Systematic review (PRISMA)"},
+    "country":    {"type": "string"},
+    "region":     {"type": "string"},
+    "sample":     {"type": "string", "description": "Short sample, e.g. '32 education leaders'"},
+    "impact":     {"type": "string", "description": "One line on sample + impact/limits"},
+    "central":    {"type": "string", "description": "The core approach (centre node)"},
+    "actors":     {"type": "array", "items": {"type": "string"}, "description": "WHO is studied (max 3 lines)"},
+    "factors":    {"type": "array", "items": {"type": "string"}, "description": "Mechanisms / themes (max 6)"},
+    "outcome":    {"type": "string", "description": "The Ends visual label (max ~2 lines)"},
+    "finding":    {"type": "string", "description": "Headline finding shown as a ribbon"},
+    "means":      {"type": "array", "items": {"type": "string"}, "description": "HOW bullets (max 5)"},
+    "ends":       {"type": "array", "items": {"type": "string"}, "description": "WHY/for-what bullets (max 5)"},
+    "verbatims":  {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "page": {"type": "integer"},
+          "line": {"type": "string"},
+          "text": {"type": "string"}
+        },
+        "required": ["page", "line", "text"]
+      },
+      "description": "Direct quotes with page + line for citation (max 5)"
+    }
+  },
+  "required": ["title", "central", "factors", "means", "ends", "verbatims"]
+}

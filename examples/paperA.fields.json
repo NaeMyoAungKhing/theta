@@ -1,0 +1,35 @@
+{
+  "title": "Adaptive Theory Approach in Leadership: A Guide to Educational Management System and Mechanisms",
+  "authors": "Leovigildo Lito D. Mallillin",
+  "year": "2022",
+  "venue": "European Journal of Education Studies 9(7)",
+  "study_type": "Quantitative study",
+  "country": "Philippines",
+  "region": "Northern Luzon, SE Asia",
+  "sample": "32 education leaders",
+  "impact": "32 education leaders (HEIs, TESDA, DepEd) - small-sample, single-program, convenient sampling",
+  "central": "Adaptive Leadership",
+  "actors": ["Deans, Directors,", "Principals & Heads", "from HEIs, TESDA, DepEd"],
+  "factors": ["Qualities & characteristics", "Challenges of leadership", "Strengthening accountability", "Problem-solving process", "Decision-making process"],
+  "outcome": "Educational management system",
+  "finding": "significant correlation found",
+  "means": [
+    "Adaptive-theory approach across 5 leadership mechanisms",
+    "Quantitative design; pedagogical immersive method",
+    "Self-made questionnaire, validated (Cronbach's alpha)",
+    "Convenient (non-probability) sample; direct observation"
+  ],
+  "ends": [
+    "A guide to the educational management system & mechanisms",
+    "Handle change; spur teacher innovation; raise accountability",
+    "Better problem-solving & decision-making for quality of education",
+    "Finding: significant correlation (adaptive leadership and management)"
+  ],
+  "verbatims": [
+    {"page": 1, "line": "20-23", "text": "The study aims to examine the process of adaptive theory in leadership as a guide to educational management mechanisms..."},
+    {"page": 1, "line": "23-25", "text": "Quantitative research design is employed in the study. It adopts the pedagogical immersive method in education..."},
+    {"page": 9, "line": "30", "text": "The study comprised thirty-two (32) respondents only."},
+    {"page": 2, "line": "8-10", "text": "Findings show that there is a significant correlation on the process of adaptive theory in leadership as a guide to educational management mechanisms..."},
+    {"page": 9, "line": "26-30", "text": "The respondents... are the educational leaders in the various educational institutions like the HEIs, TESDA, and DepEd..."}
+  ]
+}

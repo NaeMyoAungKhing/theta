@@ -1,0 +1,34 @@
+{
+  "title": "Leveraging Neuroleadership and Adopting AI to Improve Human Capital Development in IT&C Business Organisations",
+  "authors": "Stanciu, Stratone, Dabija & Mititean",
+  "year": "2024",
+  "venue": "Amfiteatru Economic 26(67), 721-740",
+  "study_type": "Qualitative study (focus group)",
+  "country": "Romania",
+  "region": "Eastern Europe (EU)",
+  "sample": "10 IT&C representatives",
+  "impact": "10 representatives of Romanian IT&C companies (focus group) - exploratory, single-sector",
+  "central": "Neuro-leadership + AI",
+  "actors": ["Leaders & employees", "of Romanian IT&C", "companies"],
+  "factors": ["Neuro-leadership & human capital", "Neuro-leadership and AI adoption", "AI's influence on human capital", "Challenges & risks of AI adoption"],
+  "outcome": "Human capital development",
+  "finding": "4 themes; continuous-learning culture",
+  "means": [
+    "Focus-group method; 10 IT&C company representatives",
+    "Dynamic discussions across 4 research themes/topics",
+    "Merges leadership, neuroscience & AI fields"
+  ],
+  "ends": [
+    "Accelerate AI adoption via neuro-leadership principles",
+    "Enhance human-capital development & employee competencies",
+    "Foster a culture of continuous learning; mitigate AI risks",
+    "Sustainable competitive advantage amid technological change"
+  ],
+  "verbatims": [
+    {"page": 1, "line": "28-31", "text": "This paper aims to explore how business organisations in the Romanian IT&C sector strategically implement neuro-leadership principles to accelerate the adoption... of artificial intelligence (AI) technologies..."},
+    {"page": 1, "line": "31-34", "text": "Applying the focus group method, dynamic discussions were held with 10 representatives of Romanian IT&C companies..."},
+    {"page": 1, "line": "34-37", "text": "The results of the research, divided into four main themes, reveal the importance of neuroleadership in improving employee competencies..."},
+    {"page": 1, "line": "39-41", "text": "...the results reveal the importance of fostering a culture of continuous learning and development to harness the potential benefits of AI..."},
+    {"page": 7, "line": "17-20", "text": "...the four research themes that facilitated the dynamic exchange of ideas, opinions, and perspectives from the participants are..."}
+  ]
+}

@@ -1,0 +1,8 @@
+# Theta dependencies
+# PDF text extraction uses the `pdftotext` CLI from poppler-utils:
+#   Ubuntu/Debian:  sudo apt-get install poppler-utils
+#   macOS (brew):   brew install poppler
+#   Windows:        install poppler and add its /bin to PATH
+#
+# Python packages (only needed for PNG preview rendering):
+cairosvg>=2.7
